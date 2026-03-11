@@ -13,11 +13,11 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v4
 
-      - name: Cleanup Force
+      - name: System Cleanup
         run: |
-          # مسح المجلد المشوه وكل ما بداخله بقوة
-          rm -rf "*المسار*"
-          # إنشاء ملف التشغيل
+          # مسح شامل لأي ملف أو مجلد مشوه بالعربية
+          rm -rf *المسار*
+          # بناء ملف التشغيل
           gradle wrapper
           chmod +x gradlew
 
