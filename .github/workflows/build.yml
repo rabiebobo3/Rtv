@@ -13,10 +13,10 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v4
 
-      - name: Cleanup and Setup
+      - name: Cleanup Force
         run: |
-          # حذف أي ملفات مشوهة بالعربية تفسد البناء
-          find . -name "*المسار*" -delete
+          # مسح المجلد المشوه وكل ما بداخله بقوة
+          rm -rf "*المسار*"
           # إنشاء ملف التشغيل
           gradle wrapper
           chmod +x gradlew
