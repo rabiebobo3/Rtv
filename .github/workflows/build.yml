@@ -1,7 +1,9 @@
-name: Build APK
+name: Build Rabie TV Pro
 
 on:
   push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,18 +16,17 @@ jobs:
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
-          cache: gradle
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
 
-      - name: Grant permission
-        run: chmod +x gradlew
-
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build APK with Bash
+        run: |
+          # هذه الخطوة تتجاوز مشاكل الأذونات في الهاتف
+          bash gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-Pro
+          name: Rabie-TV-Pro-App
           path: app/build/outputs/apk/debug/*.apk
