@@ -1,3 +1,4 @@
+
 plugins {
     id 'com.android.application'
 }
@@ -20,10 +21,19 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 dependencies {
+    // المكتبات الأساسية
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // مكتبة VLC اللي يحتاجها الكود تاعك
+    implementation 'org.videolan.android:libvlc-all:3.6.0'
 }
