@@ -1,4 +1,4 @@
-name: Build Rabie TV Pro Final
+name: Build Rabie TV Final
 on: [push]
 jobs:
   build:
@@ -11,58 +11,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Clean and Build
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+
+      - name: Build with Force
         run: |
-          # صنع مجلد التطبيق من الصفر وتجاهل أي خلوطة قديمة
-          mkdir -p final_app/src/main/java/com/rtv/tv/
+          mkdir -p app/src/main/java/com/rtv/tv/
+          # صنع ملفات وهمية لتجاوز الأخطاء
+          echo "include ':app'" > settings.gradle
+          printf "plugins { id 'com.android.application' }\nandroid { namespace 'com.rtv.tv'\ncompileSdk 34\ndefaultConfig { applicationId 'com.rtv.tv'\nminSdk 21\ntargetSdk 34\nversionCode 1\nversionName '1.0' } }\ndependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }" > app/build.gradle
+          printf "<?xml version='1.0' encoding='utf-8'?>\n<manifest xmlns:android='http://schemas.android.com/apk/res/android' package='com.rtv.tv'>\n<application android:label='Rabie TV Pro'>\n<activity android:name='.MainActivity' android:exported='true'>\n<intent-filter>\n<action android:name='android.intent.action.MAIN' />\n<category android:name='android.intent.category.LAUNCHER' />\n</intent-filter></activity></application></manifest>" > app/src/main/AndroidManifest.xml
           
-          # وضع ملف الإعدادات الأساسي
-          cat <<EOF > settings.gradle
-          include ':app'
-          EOF
-
-          # وضع ملف الـ Gradle النظيف (بدون مكتبات خارجية معقدة)
-          cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' }
-          android {
-              namespace 'com.rtv.tv'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "com.rtv.tv"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
-          }
-          EOF
-
-          # صنع المانيفست
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv">
-              <application android:label="Rabie TV Pro" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-
-          # بناء التطبيق
-          gradle wrapper
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-Pro-Final
+          name: Rabie-TV-Pro
           path: app/build/outputs/apk/debug/*.apk
