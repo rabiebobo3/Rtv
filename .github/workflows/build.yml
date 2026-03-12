@@ -1,26 +1,24 @@
-name: RabieTV_Emergency_Build
+name: Build_Real_Android_App
 on: [push]
-
 jobs:
-  build:
+  android-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Initializing Project
+      - name: Generate_APK_Files
         run: |
-          # تنظيف شامل وبناء المجلدات من جديد
+          # تنظيف وبناء الهيكل الحقيقي للتطبيق
           rm -rf *
-          mkdir -p app/src/main/java/com/rtv/tv app/src/main/res/layout app/src/main/res/values
+          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout app/src/main/res/values
 
-          # 1. إعداد Gradle (النسخة المستقرة)
+          # 1. إعدادات المشروع (المحرك)
           echo "include ':app'" > settings.gradle
+          
           cat <<'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -29,14 +27,14 @@ jobs:
           allprojects { repositories { google(); mavenCentral() } }
           EOF
 
-          # 2. إعداد التطبيق (تحديد الـ Namespace إلزامي هنا)
+          # 2. ملف بناء التطبيق (القلب)
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
-              namespace 'com.rtv.tv'
+              namespace 'com.rabie.tv'
               compileSdk 34
               defaultConfig {
-                  applicationId "com.rtv.tv"
+                  applicationId "com.rabie.tv"
                   minSdk 21
                   targetSdk 34
                   versionCode 1
@@ -49,50 +47,69 @@ jobs:
           }
           EOF
 
-          # 3. كود الجافا (MainActivity)
-          cat <<'EOF' > app/src/main/java/com/rtv/tv/MainActivity.java
-          package com.rtv.tv;
-          import android.app.Activity;
+          # 3. واجهة التطبيق (الديزاين)
+          cat <<'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:gravity="center"
+              android:background="#000000"
+              android:orientation="vertical">
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Rabie TV PRO"
+                  android:textColor="#FFFFFF"
+                  android:textSize="30sp"
+                  android:textStyle="bold" />
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Real App Build Success"
+                  android:textColor="#00FF00"
+                  android:textSize="18sp" />
+          </LinearLayout>
+          EOF
+
+          # 4. كود التشغيل (الجافا)
+          cat <<'EOF' > app/src/main/java/com/rabie/tv/MainActivity.java
+          package com.rabie.tv;
           import android.os.Bundle;
-          import android.widget.TextView;
-          import android.view.Gravity;
-          public class MainActivity extends Activity {
+          import androidx.appcompat.app.AppCompatActivity;
+
+          public class MainActivity extends AppCompatActivity {
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  TextView tv = new TextView(this);
-                  tv.setText("RabieTV VIP\nBuild Success ✅");
-                  tv.setTextSize(26);
-                  tv.setGravity(Gravity.CENTER);
-                  setContentView(tv);
+                  setContentView(R.layout.activity_main);
               }
           }
           EOF
 
-          # 4. المانيفست
+          # 5. المانيفست (تصريح التطبيق)
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv">
-              <application android:label="RabieTV VIP">
-                  <activity android:name=".MainActivity" android:exported="true">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:label="Rabie TV PRO" android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
+                  <activity android:name="com.rabie.tv.MainActivity" android:exported="true">
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
               </application>
           </manifest>
           EOF
 
-      - name: Build with Gradle Wrapper
+      - name: Build_Final_APK
         run: |
-          # إجبار النظام على نسخة 8.2 لتفادي مشاكل الـ "Null Object" والـ "Deprecated"
-          gradle wrapper --gradle-version 8.2
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload_Real_APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_VIP_Build
+          name: RabieTV_Real_App
           path: app/build/outputs/apk/debug/*.apk
