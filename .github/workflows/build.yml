@@ -1,7 +1,7 @@
-name: Build_Real_Android_App
+name: RabieTV_System_Build
 on: [push]
 jobs:
-  android-build:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,24 +10,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate_APK_Files
+      - name: Build_Files_For_Gradle_9
         run: |
-          # تنظيف وبناء الهيكل الحقيقي للتطبيق
+          # 1. تنظيف شامل
           rm -rf *
-          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout app/src/main/res/values
+          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
 
-          # 1. إعدادات المشروع (المحرك)
-          echo "include ':app'" > settings.gradle
-          
+          # 2. ملف settings.gradle (إلزامي في النسخة 9 لتحديد اسم المشروع)
+          echo "rootProject.name = 'RabieTV'" > settings.gradle
+          echo "include ':app'" >> settings.gradle
+
+          # 3. ملف build.gradle الرئيسي (بناءً على طلب السيستم في الصورة 1000048480)
           cat <<'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
               dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
           }
-          allprojects { repositories { google(); mavenCentral() } }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
           EOF
 
-          # 2. ملف بناء التطبيق (القلب)
+          # 4. ملف app/build.gradle (تطبيق قانون الـ Namespace الإلزامي)
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -40,76 +44,30 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
 
-          # 3. واجهة التطبيق (الديزاين)
-          cat <<'EOF' > app/src/main/res/layout/activity_main.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:gravity="center"
-              android:background="#000000"
-              android:orientation="vertical">
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Rabie TV PRO"
-                  android:textColor="#FFFFFF"
-                  android:textSize="30sp"
-                  android:textStyle="bold" />
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Real App Build Success"
-                  android:textColor="#00FF00"
-                  android:textSize="18sp" />
-          </LinearLayout>
-          EOF
+          # 5. كود الجافا والمانيفست
+          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO\nMatched with System ✅"); t.setGravity(android.view.Gravity.CENTER); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rabie.tv"><application android:label="RabieTV"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
 
-          # 4. كود التشغيل (الجافا)
-          cat <<'EOF' > app/src/main/java/com/rabie/tv/MainActivity.java
-          package com.rabie.tv;
-          import android.os.Bundle;
-          import androidx.appcompat.app.AppCompatActivity;
-
-          public class MainActivity extends AppCompatActivity {
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  setContentView(R.layout.activity_main);
-              }
-          }
-          EOF
-
-          # 5. المانيفست (تصريح التطبيق)
-          cat <<'EOF' > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="Rabie TV PRO" android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
-                  <activity android:name="com.rabie.tv.MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-
-      - name: Build_Final_APK
+      - name: System_Execution
         run: |
-          gradle wrapper --gradle-version 8.5
+          # استعمال الـ Wrapper الخاص بـ 9.3.1 كما هو مفروض في صورك
+          gradle wrapper --gradle-version 9.3.1
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload_Real_APK
+      - name: Final_Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_Real_App
+          name: RabieTV_System_APK
           path: app/build/outputs/apk/debug/*.apk
