@@ -1,0 +1,20 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'com.rtv.tv'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.rtv.tv"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0-Pro"
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'org.videolan.android:libvlc-all:3.6.0'
+}
