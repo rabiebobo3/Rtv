@@ -10,13 +10,18 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Fix and Prepare
+
+      - name: Auto-Fix Structure
         run: |
-          chmod +x fix.sh
-          ./fix.sh
-          mv app/build2.gradle app/build.gradle
+          # هادا السطر يلقى وين راه الـ gradle ويجيبو للمكان الصح
+          find . -name "build2.gradle" -exec cp {} app/build.gradle \;
+          gradle wrapper
+
       - name: Build APK
-        run: chmod +x gradlew && ./gradlew assembleDebug
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
