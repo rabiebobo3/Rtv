@@ -1,4 +1,4 @@
-name: RabieTV_Zero_Error_Build
+name: RabieTV_Force_Build
 on: [push]
 jobs:
   build:
@@ -6,20 +6,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+        with: { java-version: '17', distribution: 'temurin' }
 
-      - name: Force_Modern_Rebuild
+      - name: Create_And_Build
         run: |
-          # 1. مسح شامل لكل ما هو قديم لضمان عدم التعارض
-          rm -rf * mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout app/src/main/res/values
+          # 1. مسح شامل لضمان عدم وجود أخطاء قديمة (تجنب خطأ rm -rf)
+          find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
 
-          # 2. ملف الإعدادات (settings.gradle) - الطريقة الإلزامية الجديدة
+          # 2. بناء الهيكل الاحترافي (لضمان وجود المسارات)
+          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout app/src/main/res/values
+
+          # 3. ملف الإعدادات (settings.gradle) - السطر اللي يحل مشكلة الـ Plugin
           cat <<'EOF' > settings.gradle
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
@@ -28,41 +27,26 @@ jobs:
           include ':app'
           EOF
 
-          # 3. ملف build.gradle الرئيسي (فارغ مع البلاجن كما يطلبه السيستم)
-          echo "plugins { id 'com.android.application' version '8.2.2' apply false }" > build.gradle
-
-          # 4. ملف app/build.gradle (قفل النجاح: namespace + compileSdk)
+          # 4. ملف بناء التطبيق (app/build.gradle) - هنا وين نحددو الـ Namespace
           cat <<'EOF' > app/build.gradle
-          plugins { id 'com.android.application' }
+          plugins { id 'com.android.application' version '8.2.2' }
           android {
               namespace 'com.rabie.tv'
               compileSdk 34
-              defaultConfig {
-                  applicationId "com.rabie.tv"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
-              }
+              defaultConfig { applicationId "com.rabie.tv"; minSdk 21; targetSdk 34; versionCode 1; versionName "1.0" }
           }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-          # 5. ملفات الكود والديزاين (بدون أخطاء)
-          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO\nSUCCESS AT LAST!"); t.setGravity(android.view.Gravity.CENTER); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
+          # 5. ملفات الكود والمانيفست (الأساسيات للنجاح)
+          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO ✅"); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
           echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="RabieTV"><activity android:name="com.rabie.tv.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
 
-      - name: Build_Action
-        run: |
-          # إجبار السيستم على استخدام نسخة مستقرة 8.5 لتفادي انهيار Gradle 9.3.1
+          # 6. أمر البناء النهائي (إجبار السيستم)
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
-
-      - name: Upload_APK
+          ./gradlew assembleDebug --no-daemon
+          
+      - name: Download_Link
         uses: actions/upload-artifact@v4
-        with:
-          name: RabieTV_Final_Result
-          path: app/build/outputs/apk/debug/*.apk
+        with: { name: 'RabieTV_Final_APK', path: 'app/build/outputs/apk/debug/*.apk' }
