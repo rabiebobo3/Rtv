@@ -1,4 +1,4 @@
-name: RabieTV_Modern_Build
+name: RabieTV_Zero_Error_Build
 on: [push]
 jobs:
   build:
@@ -9,16 +9,13 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: Create_Modern_Project
+      - name: Force_Modern_Rebuild
         run: |
-          # تنظيف وبناء الهيكل العصري
-          rm -rf *
-          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
+          # 1. مسح شامل لكل ما هو قديم لضمان عدم التعارض
+          rm -rf * mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout app/src/main/res/values
 
-          # 1. ملف الإعدادات العصري (settings.gradle)
-          # هذا الملف هو اللي يحل مشكلة Repositories اللي ظهرت في صورك
+          # 2. ملف الإعدادات (settings.gradle) - الطريقة الإلزامية الجديدة
           cat <<'EOF' > settings.gradle
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
@@ -31,10 +28,10 @@ jobs:
           include ':app'
           EOF
 
-          # 2. ملف build.gradle الرئيسي (النسخ الجديدة تطلبه فارغ مع البلاجن)
+          # 3. ملف build.gradle الرئيسي (فارغ مع البلاجن كما يطلبه السيستم)
           echo "plugins { id 'com.android.application' version '8.2.2' apply false }" > build.gradle
 
-          # 3. ملف app/build.gradle (إضافة الـ Namespace الإلزامي لنجاح البناء)
+          # 4. ملف app/build.gradle (قفل النجاح: namespace + compileSdk)
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -53,19 +50,19 @@ jobs:
           }
           EOF
 
-          # 4. كود الجافا والمانيفست (الحد الأدنى للتشغيل)
-          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO\nModern Build Success ✅"); t.setGravity(android.view.Gravity.CENTER); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
+          # 5. ملفات الكود والديزاين (بدون أخطاء)
+          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO\nSUCCESS AT LAST!"); t.setGravity(android.view.Gravity.CENTER); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
           echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="RabieTV"><activity android:name="com.rabie.tv.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
 
-      - name: Execute_Build
+      - name: Build_Action
         run: |
-          # إجبار السيستم على استخدام نسخة مستقرة تتماشى مع الأكواد العصرية
+          # إجبار السيستم على استخدام نسخة مستقرة 8.5 لتفادي انهيار Gradle 9.3.1
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload_APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_Modern_APK
+          name: RabieTV_Final_Result
           path: app/build/outputs/apk/debug/*.apk
