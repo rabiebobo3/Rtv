@@ -1,4 +1,4 @@
-name: Build Rabie TV VLC Final
+name: Final Clean Build VLC
 on: [push]
 jobs:
   build:
@@ -11,17 +11,45 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup VLC Project
+      - name: Destroy and Rebuild Structure
         run: |
-          # صنع المسار اللي مكتوب في الكود (com.rtv.tv)
-          mkdir -p app/src/main/java/com/rtv/tv/
-          # وضع كود الـ Java في مكانه الصحيح آلياً
-          find . -name "*.java" -exec cp {} app/src/main/java/com/rtv/tv/ \;
-          # تفعيل ملف الـ Gradle اللي فيه مكتبة VLC
-          cp app/build2.gradle app/build.gradle || cp build2.gradle app/build.gradle
+          # تنظيف شامل داخل السيرفر لتجنب تكرار الملفات
+          mkdir -p final_src/app/src/main/java/com/rtv/tv/
+          mkdir -p final_src/app/src/main/res/layout/
+          
+          # وضع كود الـ Java اللي عطيتهولي في مكانه الصحيح
+          find . -name "MainActivity.java" -exec cp {} final_src/app/src/main/java/com/rtv/tv/MainActivity.java \;
+          
+          # نقل ملفات الـ XML (Splash و Main)
+          find . -name "splash.xml" -exec cp {} final_src/app/src/main/res/layout/ \;
+          find . -name "main.xml" -exec cp {} final_src/app/src/main/res/layout/ \;
 
-      - name: Build APK
-        run: |
+          # صنع ملف الـ Gradle الموحد داخل السيرفر مباشرة
+          cat <<EOF > final_src/app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.rtv.tv'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.rtv.tv"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
+              implementation 'org.videolan.android:libvlc-all:3.6.0'
+          }
+          EOF
+
+          # صنع ملف Settings
+          echo "include ':app'" > final_src/settings.gradle
+          
+          # الانتقال للمجلد النظيف والبناء
+          cd final_src
           gradle wrapper
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -29,5 +57,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-VLC-Final
-          path: app/build/outputs/apk/debug/*.apk
+          name: Rabie-TV-Clean-VLC
+          path: final_src/app/build/outputs/apk/debug/*.apk
