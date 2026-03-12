@@ -1,4 +1,4 @@
-name: RabieTV_Final_Ultimate_Success
+name: RabieTV_Emergency_Build
 on: [push]
 
 jobs:
@@ -6,34 +6,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Java 17
+      
+      - name: set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Create Clean Project
+      - name: Initializing Project
         run: |
-          # تنظيف أي محاولات قديمة
+          # تنظيف شامل وبناء المجلدات من جديد
           rm -rf *
           mkdir -p app/src/main/java/com/rtv/tv app/src/main/res/layout app/src/main/res/values
-          
-          # 1. ملف الإعدادات الأساسي
-          echo "include ':app'" > settings.gradle
 
-          # 2. ملف بناء المشروع الرئيسي (Root build.gradle)
+          # 1. إعداد Gradle (النسخة المستقرة)
+          echo "include ':app'" > settings.gradle
           cat <<'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
               dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
           }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
+          allprojects { repositories { google(); mavenCentral() } }
           EOF
 
-          # 3. ملف بناء التطبيق (App build.gradle) - تم تصحيح الـ Dependencies
+          # 2. إعداد التطبيق (تحديد الـ Namespace إلزامي هنا)
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -50,21 +46,35 @@ jobs:
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
-              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-              implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
           }
           EOF
 
-          # 4. المانيفست (Manifest)
+          # 3. كود الجافا (MainActivity)
+          cat <<'EOF' > app/src/main/java/com/rtv/tv/MainActivity.java
+          package com.rtv.tv;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+          import android.view.Gravity;
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView tv = new TextView(this);
+                  tv.setText("RabieTV VIP\nBuild Success ✅");
+                  tv.setTextSize(26);
+                  tv.setGravity(Gravity.CENTER);
+                  setContentView(tv);
+              }
+          }
+          EOF
+
+          # 4. المانيفست
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <application 
-                  android:label="RabieTV VIP" 
-                  android:usesCleartextTraffic="true"
-                  android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-                  <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
+              <application android:label="RabieTV VIP">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
@@ -74,34 +84,15 @@ jobs:
           </manifest>
           EOF
 
-          # 5. كود الجافا (MainActivity) - نسخة بسيطة لضمان التشغيل
-          cat <<'EOF' > app/src/main/java/com/rtv/tv/MainActivity.java
-          package com.rtv.tv;
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.widget.TextView;
-          import android.view.Gravity;
-
-          public class MainActivity extends Activity {
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  TextView tv = new TextView(this);
-                  tv.setText("RabieTV VIP Ready");
-                  tv.setGravity(Gravity.CENTER);
-                  setContentView(tv);
-              }
-          }
-          EOF
-
       - name: Build with Gradle Wrapper
         run: |
-          gradle wrapper --gradle-version 8.5
+          # إجبار النظام على نسخة 8.2 لتفادي مشاكل الـ "Null Object" والـ "Deprecated"
+          gradle wrapper --gradle-version 8.2
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload Victory APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_VIP_Ultimate
+          name: RabieTV_VIP_Build
           path: app/build/outputs/apk/debug/*.apk
