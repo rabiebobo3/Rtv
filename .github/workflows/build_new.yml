@@ -1,4 +1,4 @@
-name: RabieTV_Final_Simple_Build
+name: RabieTV_Final_Success
 on: [push]
 
 jobs:
@@ -13,15 +13,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Clean and Create Project
+      - name: Build Project
         run: |
-          # 1. تنظيف المجلدات تماماً
+          # تنظيف وبناء المجلدات
           rm -rf *
-          mkdir -p app/src/main/java/com/rtv/tv app/src/main/res/layout app/src/main/res/values
+          mkdir -p app/src/main/java/com/rtv/tv app/src/main/res/layout
 
-          # 2. ملفات الإعدادات (بسيطة جداً لتفادي خطأ Null Object)
+          # 1. إعداد Gradle المستقر
           echo "include ':app'" > settings.gradle
-
           cat <<'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -30,6 +29,7 @@ jobs:
           allprojects { repositories { google(); mavenCentral() } }
           EOF
 
+          # 2. ملف بناء التطبيق (التصحيح النهائي)
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -48,21 +48,20 @@ jobs:
           }
           EOF
 
-          # 3. كود الجافا (شاشة ترحيب بسيطة)
+          # 3. كود الجافا (MainActivity)
           cat <<'EOF' > app/src/main/java/com/rtv/tv/MainActivity.java
           package com.rtv.tv;
           import android.app.Activity;
           import android.os.Bundle;
           import android.widget.TextView;
           import android.view.Gravity;
-
           public class MainActivity extends Activity {
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   TextView tv = new TextView(this);
-                  tv.setText("RabieTV Start Success ✅");
-                  tv.setTextSize(24);
+                  tv.setText("RabieTV VIP Ready ✅");
+                  tv.setTextSize(30);
                   tv.setGravity(Gravity.CENTER);
                   setContentView(tv);
               }
@@ -73,7 +72,7 @@ jobs:
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv">
-              <application android:label="RabieTV Simple">
+              <application android:label="RabieTV VIP">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -84,15 +83,14 @@ jobs:
           </manifest>
           EOF
 
-      - name: Build APK with Stable Gradle
+      - name: Final Build
         run: |
-          # إجبار النظام على استخدام نسخة Gradle مستقرة (8.5) لتجنب أخطاء نسخة 9.3
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload Resulting APK
+      - name: Download APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_Simple_Success
+          name: RabieTV_Final_APK
           path: app/build/outputs/apk/debug/*.apk
