@@ -1,4 +1,4 @@
-name: RabieTV_System_Match
+name: RabieTV_Modern_Build
 on: [push]
 jobs:
   build:
@@ -9,35 +9,39 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
-      - name: Create_Project_Modern_Way
+      - name: Create_Modern_Project
         run: |
+          # تنظيف وبناء الهيكل العصري
           rm -rf *
-          mkdir -p app/src/main/java/com/rtv/tv app/src/main/res/layout
-          
-          # 1. ملف الإعدادات (settings.gradle)
-          echo "rootProject.name = 'RabieTV'" > settings.gradle
-          echo "include ':app'" >> settings.gradle
+          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
 
-          # 2. ملف بناء المشروع الرئيسي (Root build.gradle) - إلزامي في النسخة 9
-          cat <<'EOF' > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+          # 1. ملف الإعدادات العصري (settings.gradle)
+          # هذا الملف هو اللي يحل مشكلة Repositories اللي ظهرت في صورك
+          cat <<'EOF' > settings.gradle
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
-          allprojects {
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
           }
+          rootProject.name = "RabieTV"
+          include ':app'
           EOF
 
-          # 3. ملف بناء التطبيق (app/build.gradle) - النسخة 9 تفرض الـ namespace
+          # 2. ملف build.gradle الرئيسي (النسخ الجديدة تطلبه فارغ مع البلاجن)
+          echo "plugins { id 'com.android.application' version '8.2.2' apply false }" > build.gradle
+
+          # 3. ملف app/build.gradle (إضافة الـ Namespace الإلزامي لنجاح البناء)
           cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
-              namespace 'com.rtv.tv'
+              namespace 'com.rabie.tv'
               compileSdk 34
               defaultConfig {
-                  applicationId "com.rtv.tv"
+                  applicationId "com.rabie.tv"
                   minSdk 21
                   targetSdk 34
                   versionCode 1
@@ -49,20 +53,19 @@ jobs:
           }
           EOF
 
-          # 4. كود الجافا والمانيفست (الحد الأدنى للنجاح)
-          echo 'package com.rtv.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("MATCHED WITH SYSTEM"); setContentView(t); } }' > app/src/main/java/com/rtv/tv/MainActivity.java
-          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv"><application android:label="RabieTV"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
+          # 4. كود الجافا والمانيفست (الحد الأدنى للتشغيل)
+          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO\nModern Build Success ✅"); t.setGravity(android.view.Gravity.CENTER); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="RabieTV"><activity android:name="com.rabie.tv.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
 
-      - name: Build_Action
+      - name: Execute_Build
         run: |
-          # حتى لو السيستم فرض 9.3، الـ Wrapper هو اللي يحدد "اللغة"
-          # إذا أردت استخدام 9.3.1 مباشرة، نكتبها هنا:
-          gradle wrapper --gradle-version 9.3.1
+          # إجبار السيستم على استخدام نسخة مستقرة تتماشى مع الأكواد العصرية
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Export_APK
+      - name: Upload_APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_Matched_APK
+          name: RabieTV_Modern_APK
           path: app/build/outputs/apk/debug/*.apk
