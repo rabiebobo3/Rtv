@@ -1,4 +1,4 @@
-name: RabieTV_System_Build
+name: RabieTV_Final_Match
 on: [push]
 jobs:
   build:
@@ -10,30 +10,27 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build_Files_For_Gradle_9
+      - name: Setup_Modern_Project
         run: |
-          # 1. تنظيف شامل
-          rm -rf *
-          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
+          # تنظيف كامل للمخلفات القديمة التي تسبب الفشل
+          rm -rf * mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
 
-          # 2. ملف settings.gradle (إلزامي في النسخة 9 لتحديد اسم المشروع)
-          echo "rootProject.name = 'RabieTV'" > settings.gradle
-          echo "include ':app'" >> settings.gradle
-
-          # 3. ملف build.gradle الرئيسي (بناءً على طلب السيستم في الصورة 1000048480)
-          cat <<'EOF' > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+          # 1. إعدادات المستودعات العصرية (لحل مشكلة Plugin not found)
+          cat <<'EOF' > settings.gradle
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
-          allprojects {
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
           }
+          rootProject.name = "RabieTV"
+          include ':app'
           EOF
 
-          # 4. ملف app/build.gradle (تطبيق قانون الـ Namespace الإلزامي)
+          # 2. ملف بناء التطبيق مع الـ Namespace الإلزامي
           cat <<'EOF' > app/build.gradle
-          plugins { id 'com.android.application' }
+          plugins { id 'com.android.application' version '8.2.2' }
           android {
               namespace 'com.rabie.tv'
               compileSdk 34
@@ -44,30 +41,25 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                  }
-              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
 
-          # 5. كود الجافا والمانيفست
-          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV PRO\nMatched with System ✅"); t.setGravity(android.view.Gravity.CENTER); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
-          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rabie.tv"><application android:label="RabieTV"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
+          # 3. كود الجافا والمانيفست (الأساس)
+          echo 'package com.rabie.tv; import android.app.Activity; public class MainActivity extends Activity { @Override protected void onCreate(android.os.Bundle s) { super.onCreate(s); android.widget.TextView t = new android.widget.TextView(this); t.setText("RabieTV: Mission Complete ✅"); t.setGravity(17); setContentView(t); } }' > app/src/main/java/com/rabie/tv/MainActivity.java
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="RabieTV"><activity android:name="com.rabie.tv.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
 
-      - name: System_Execution
+      - name: Build_Action
         run: |
-          # استعمال الـ Wrapper الخاص بـ 9.3.1 كما هو مفروض في صورك
-          gradle wrapper --gradle-version 9.3.1
+          # استعمال الـ Wrapper لضمان استقرار البناء
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Final_Artifact
+      - name: Upload_APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_System_APK
+          name: RabieTV_Success_APK
           path: app/build/outputs/apk/debug/*.apk
