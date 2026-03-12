@@ -1,0 +1,37 @@
+name: RTV_New_Way
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '17', distribution: 'temurin' }
+
+      - name: Build_In_New_Folder
+        run: |
+          # نخدمو في مجلد جديد اسمه 'new_app' باش نهربو من المشاكل القديمة
+          mkdir -p new_app/src/main/java/com/rabie/tv
+          
+          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }; dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }; rootProject.name = 'RabieTV'; include ':new_app'" > settings.gradle
+          
+          # ملف بناء بسيط جداً لضمان النجاح
+          cat <<EOF > new_app/build.gradle
+          plugins { id 'com.android.application' version '8.2.2' }
+          android { 
+              namespace 'com.rabie.tv'
+              compileSdk 34
+              defaultConfig { applicationId 'com.rabie.tv'; minSdk 21; targetSdk 34; versionCode 1; versionName '1.0' }
+          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
+          EOF
+
+          echo 'package com.rabie.tv; import android.app.Activity; import android.os.Bundle; import android.widget.TextView; public class MainActivity extends Activity { @Override protected void onCreate(Bundle s) { super.onCreate(s); TextView t = new TextView(this); t.setText("Rabie Success ✅"); setContentView(t); } }' > new_app/src/main/java/com/rabie/tv/MainActivity.java
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="RabieTV"><activity android:name="com.rabie.tv.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > new_app/src/main/AndroidManifest.xml
+          
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with: { name: 'RTV_APK', path: 'new_app/build/outputs/apk/debug/*.apk' }
