@@ -1,4 +1,4 @@
-name: Build Rabie TV Pro
+name: Build Rabie TV Pro Final
 on: [push]
 jobs:
   build:
@@ -11,19 +11,58 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Auto-Fix Structure
+      - name: Force Clean and Build
         run: |
-          # هادا السطر يلقى وين راه الـ gradle ويجيبو للمكان الصح
-          find . -name "build2.gradle" -exec cp {} app/build.gradle \;
-          gradle wrapper
+          # صنع مجلد التطبيق من الصفر وتجاهل أي خلوطة قديمة
+          mkdir -p final_app/src/main/java/com/rtv/tv/
+          
+          # وضع ملف الإعدادات الأساسي
+          cat <<EOF > settings.gradle
+          include ':app'
+          EOF
 
-      - name: Build APK
-        run: |
+          # وضع ملف الـ Gradle النظيف (بدون مكتبات خارجية معقدة)
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.rtv.tv'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.rtv.tv"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
+          }
+          EOF
+
+          # صنع المانيفست
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv">
+              <application android:label="Rabie TV Pro" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # بناء التطبيق
+          gradle wrapper
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-Pro
+          name: Rabie-TV-Pro-Final
           path: app/build/outputs/apk/debug/*.apk
