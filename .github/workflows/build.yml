@@ -1,4 +1,4 @@
-name: Final Clean Build VLC
+name: Rabie TV Final Build
 on: [push]
 jobs:
   build:
@@ -11,21 +11,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Destroy and Rebuild Structure
+      - name: Force Clean and Build Structure
         run: |
-          # تنظيف شامل داخل السيرفر لتجنب تكرار الملفات
-          mkdir -p final_src/app/src/main/java/com/rtv/tv/
-          mkdir -p final_src/app/src/main/res/layout/
+          # 1. صنع مجلد المشروع الأساسي
+          mkdir -p app/src/main/java/com/rtv/tv/
+          mkdir -p app/src/main/res/layout/
           
-          # وضع كود الـ Java اللي عطيتهولي في مكانه الصحيح
-          find . -name "MainActivity.java" -exec cp {} final_src/app/src/main/java/com/rtv/tv/MainActivity.java \;
-          
-          # نقل ملفات الـ XML (Splash و Main)
-          find . -name "splash.xml" -exec cp {} final_src/app/src/main/res/layout/ \;
-          find . -name "main.xml" -exec cp {} final_src/app/src/main/res/layout/ \;
+          # 2. صنع ملف settings.gradle (ضروري جداً)
+          echo "include ':app'" > settings.gradle
 
-          # صنع ملف الـ Gradle الموحد داخل السيرفر مباشرة
-          cat <<EOF > final_src/app/build.gradle
+          # 3. صنع ملف build.gradle للمشروع (المفتاح اللي كان ناقص)
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google() ; mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects {
+              repositories { google() ; mavenCentral() }
+          }
+          EOF
+
+          # 4. صنع ملف build.gradle للتطبيق (اللي فيه VLC)
+          cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
               namespace 'com.rtv.tv'
@@ -45,11 +52,12 @@ jobs:
           }
           EOF
 
-          # صنع ملف Settings
-          echo "include ':app'" > final_src/settings.gradle
-          
-          # الانتقال للمجلد النظيف والبناء
-          cd final_src
+          # 5. نقل ملفاتك لمكانها الصحيح
+          find . -name "MainActivity.java" -exec cp {} app/src/main/java/com/rtv/tv/MainActivity.java \;
+          find . -name "splash.xml" -exec cp {} app/src/main/res/layout/ \;
+          find . -name "main.xml" -exec cp {} app/src/main/res/layout/ \;
+
+          # 6. البناء النهائي
           gradle wrapper
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -57,5 +65,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-Clean-VLC
-          path: final_src/app/build/outputs/apk/debug/*.apk
+          name: Rabie-TV-VLC-Final
+          path: app/build/outputs/apk/debug/*.apk
