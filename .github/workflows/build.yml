@@ -1,25 +1,25 @@
-name: RabieTV_Final_Fix
+name: RabieTV_Fix
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout_Code
+      - name: Get_Code
         uses: actions/checkout@v4
 
-      - name: Set_up_Java
+      - name: Setup_Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build_Project_Files
+      - name: Make_Files
         run: |
-          # 1. تنظيف وبناء المجلدات
+          # تنظيف وبناء المجلدات
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
           mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
 
-          # 2. ملف settings.gradle
+          # settings.gradle
           cat <<EOF > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
@@ -30,10 +30,10 @@ jobs:
           include ':app'
           EOF
 
-          # 3. ملف build.gradle (Root)
+          # build.gradle
           echo "plugins { id 'com.android.application' version '8.2.2' apply false }" > build.gradle
 
-          # 4. ملف app/build.gradle
+          # app/build.gradle
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -47,12 +47,10 @@ jobs:
                   versionName "1.0"
               }
           }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-          # 5. المانيفست
+          # AndroidManifest.xml
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -67,7 +65,7 @@ jobs:
           </manifest>
           EOF
 
-          # 6. كود الجافا
+          # MainActivity.java
           cat <<EOF > app/src/main/java/com/rabie/tv/MainActivity.java
           package com.rabie.tv;
           import android.app.Activity;
@@ -78,20 +76,20 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   TextView tv = new TextView(this);
-                  tv.setText("RabieTV Success ✅");
+                  tv.setText("RabieTV Success!");
                   setContentView(tv);
               }
           }
           EOF
 
-      - name: Run_Gradle_Build
+      - name: Build_APK
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload_APK
+      - name: Save_APK
         uses: actions/upload-artifact@v4
         with:
-          name: RabieTV_APK
+          name: RabieTV_Final
           path: app/build/outputs/apk/debug/*.apk
