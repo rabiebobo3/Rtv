@@ -1,31 +1,36 @@
-name: Rabie TV Final Success
+name: RabieTV_Final_Simple_Build
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 17
+
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Clean Start
+      - name: Force Clean and Create Project
         run: |
-          # صنع مجلد جديد ونظيف تماماً
-          mkdir -p work/app/src/main/java/com/rtv/tv/
-          mkdir -p work/app/src/main/res/layout/
-          
-          # وضع الكود تاعك (MainActivity.java) في مكانه الصحيح آلياً
-          find . -name "MainActivity.java" -exec cp {} work/app/src/main/java/com/rtv/tv/MainActivity.java \;
-          
-          # نقل ملفات الواجهة (Splash و Main)
-          find . -name "splash.xml" -exec cp {} work/app/src/main/res/layout/ \;
-          find . -name "main.xml" -exec cp {} work/app/src/main/res/layout/ \;
+          # 1. تنظيف المجلدات تماماً
+          rm -rf *
+          mkdir -p app/src/main/java/com/rtv/tv app/src/main/res/layout app/src/main/res/values
 
-          # صنع ملف الغرادل الموحد
-          cat <<EOF > work/app/build.gradle
+          # 2. ملفات الإعدادات (بسيطة جداً لتفادي خطأ Null Object)
+          echo "include ':app'" > settings.gradle
+
+          cat <<'EOF' > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+
+          cat <<'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
               namespace 'com.rtv.tv'
@@ -40,21 +45,54 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
-              implementation 'org.videolan.android:libvlc-all:3.6.0'
           }
           EOF
 
-          echo "include ':app'" > work/settings.gradle
-          
-          # البناء من المجلد النظيف
-          cd work
-          gradle wrapper
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # 3. كود الجافا (شاشة ترحيب بسيطة)
+          cat <<'EOF' > app/src/main/java/com/rtv/tv/MainActivity.java
+          package com.rtv.tv;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+          import android.view.Gravity;
 
-      - name: Upload APK
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView tv = new TextView(this);
+                  tv.setText("RabieTV Start Success ✅");
+                  tv.setTextSize(24);
+                  tv.setGravity(Gravity.CENTER);
+                  setContentView(tv);
+              }
+          }
+          EOF
+
+          # 4. المانيفست (Manifest)
+          cat <<'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rtv.tv">
+              <application android:label="RabieTV Simple">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+      - name: Build APK with Stable Gradle
+        run: |
+          # إجبار النظام على استخدام نسخة Gradle مستقرة (8.5) لتجنب أخطاء نسخة 9.3
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Resulting APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-Pro
-          path: work/app/build/outputs/apk/debug/*.apk
+          name: RabieTV_Simple_Success
+          path: app/build/outputs/apk/debug/*.apk
