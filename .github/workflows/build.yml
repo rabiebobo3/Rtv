@@ -1,4 +1,4 @@
-name: Rabie TV Final Build
+name: Rabie TV Final Trial
 on: [push]
 jobs:
   build:
@@ -11,39 +11,34 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Clean and Build Structure
+      - name: Auto-Fix and Build
         run: |
-          # 1. صنع مجلد المشروع الأساسي
+          # صنع المجلدات
           mkdir -p app/src/main/java/com/rtv/tv/
           mkdir -p app/src/main/res/layout/
           
-          # 2. صنع ملف settings.gradle (ضروري جداً)
-          echo "include ':app'" > settings.gradle
+          # البحث عن ملفاتك ووضعها في مكانها الصحيح مهما كان اسمها
+          find . -name "*.java" -exec cp {} app/src/main/java/com/rtv/tv/MainActivity.java \;
+          find . -name "main.xml" -exec cp {} app/src/main/res/layout/main.xml \;
+          find . -name "splash.xml" -exec cp {} app/src/main/res/layout/splash.xml \;
 
-          # 3. صنع ملف build.gradle للمشروع (المفتاح اللي كان ناقص)
+          # صنع ملفات الإعدادات (المفتاح)
+          echo "include ':app'" > settings.gradle
+          
           cat <<EOF > build.gradle
           buildscript {
-              repositories { google() ; mavenCentral() }
+              repositories { google(); mavenCentral() }
               dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
           }
-          allprojects {
-              repositories { google() ; mavenCentral() }
-          }
+          allprojects { repositories { google(); mavenCentral() } }
           EOF
 
-          # 4. صنع ملف build.gradle للتطبيق (اللي فيه VLC)
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
               namespace 'com.rtv.tv'
               compileSdk 34
-              defaultConfig {
-                  applicationId "com.rtv.tv"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
-              }
+              defaultConfig { applicationId "com.rtv.tv"; minSdk 21; targetSdk 34; versionCode 1; versionName "1.0" }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -52,18 +47,16 @@ jobs:
           }
           EOF
 
-          # 5. نقل ملفاتك لمكانها الصحيح
-          find . -name "MainActivity.java" -exec cp {} app/src/main/java/com/rtv/tv/MainActivity.java \;
-          find . -name "splash.xml" -exec cp {} app/src/main/res/layout/ \;
-          find . -name "main.xml" -exec cp {} app/src/main/res/layout/ \;
+          # صنع Manifest بسيط لتفادي الأخطاء
+          mkdir -p app/src/main/
+          echo "<?xml version='1.0' encoding='utf-8'?><manifest xmlns:android='http://schemas.android.com/apk/res/android' package='com.rtv.tv'><application android:label='Rabie TV'><activity android:name='.MainActivity' android:exported='true'><intent-filter><action android:name='android.intent.action.MAIN'/><category android:name='android.intent.category.LAUNCHER'/></intent-filter></activity></application></manifest>" > app/src/main/AndroidManifest.xml
 
-          # 6. البناء النهائي
+          # البناء
           gradle wrapper
-          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rabie-TV-VLC-Final
+          name: Rabie-TV-Success
           path: app/build/outputs/apk/debug/*.apk
