@@ -7,21 +7,19 @@ jobs:
       - name: Checkout_Code
         uses: actions/checkout@v4
 
-      - name: Set_up_JDK
+      - name: Set_up_Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force_Clean_And_Build
+      - name: Build_Project_Files
         run: |
-          # تنظيف جذري آمن
+          # 1. تنظيف وبناء المجلدات
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
-          
-          # بناء الهيكل
-          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout app/src/main/res/values
+          mkdir -p app/src/main/java/com/rabie/tv app/src/main/res/layout
 
-          # 1. settings.gradle
+          # 2. ملف settings.gradle
           cat <<EOF > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
@@ -32,10 +30,10 @@ jobs:
           include ':app'
           EOF
 
-          # 2. build.gradle (Root)
+          # 3. ملف build.gradle (Root)
           echo "plugins { id 'com.android.application' version '8.2.2' apply false }" > build.gradle
 
-          # 3. app/build.gradle
+          # 4. ملف app/build.gradle
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -54,7 +52,7 @@ jobs:
           }
           EOF
 
-          # 4. AndroidManifest.xml
+          # 5. المانيفست
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -69,7 +67,7 @@ jobs:
           </manifest>
           EOF
 
-          # 5. MainActivity.java
+          # 6. كود الجافا
           cat <<EOF > app/src/main/java/com/rabie/tv/MainActivity.java
           package com.rabie.tv;
           import android.app.Activity;
@@ -80,13 +78,14 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   TextView tv = new TextView(this);
-                  tv.setText("RabieTV Success!");
+                  tv.setText("RabieTV Success ✅");
                   setContentView(tv);
               }
           }
           EOF
 
-          # التنفيذ النهائي
+      - name: Run_Gradle_Build
+        run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
